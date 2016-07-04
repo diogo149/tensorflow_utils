@@ -351,8 +351,6 @@ def categorical_accuracy(pred, target, axis=1):
 
 """
 RNNs:
-- https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/ops/rnn.py
-- https://github.com/tensorflow/tensorflow/blob/master/tensorflow/models/rnn/ptb/ptb_word_lm.py
 - want RNNs with precomputed input
 - grouping linear operations for LSTM
 
@@ -362,31 +360,4 @@ RNNs:
 - cons
   - some things become harder
     - eg. different init for different weights in LSTM
-
-
-
-
-
-sess = tf.InteractiveSession()
-
-
-def custom_init(shape, dtype):
-    return np.random.randn(3, 3)
-
-
-def fake_init(shape, dtype):
-    assert False
-
-
-with tf.variable_scope("a"):
-    foo1 = tf.get_variable("foo", shape=(3, 3), initializer=custom_init)
-with tf.variable_scope("a", reuse=True):
-    foo2 = tf.get_variable("foo", shape=(3, 3), initializer=fake_init)
-
-
-with tf.variable_scope("foo"):
-    with tf.variable_scope("bar"):
-        v = tf.get_variable("v", [1])
-
-tf.initialize_all_variables().run()
 """
