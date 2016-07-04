@@ -51,9 +51,7 @@ with tf.variable_scope("mlp",
     l = tf.nn.relu(l)
     l = tfu.affine("logit", l, 10)
 
-y = tf.nn.softmax(l)
-
-cross_entropy = tf.reduce_mean(tfu.categorical_cross_entropy(y, y_))
+cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(l, y_))
 
 # train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
@@ -71,7 +69,7 @@ def to_minibatches(dataset, batch_size):
         yield res
 
 
-accuracy = tf.reduce_mean(tfu.categorical_accuracy(y, y_))
+accuracy = tf.reduce_mean(tfu.categorical_accuracy(l, y_))
 
 sess.run(tf.initialize_all_variables())
 
