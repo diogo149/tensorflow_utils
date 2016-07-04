@@ -284,6 +284,7 @@ def rnn_reduce(name,
 
 
 def simple_rnn_step(tensors, state):
+    # TODO have different fn to also precompute input
     x, = tensors
     h = state
     assert is_tensor(x)
@@ -297,6 +298,7 @@ def simple_rnn_step(tensors, state):
 
 
 def lstm_step(tensors, state):
+    # TODO group linear operations for more efficiency
     x, = tensors
     h = state["h"]
     c = state["c"]
@@ -370,16 +372,3 @@ def categorical_accuracy(pred, target, axis=1):
     class_preds = tf.argmax(pred, dimension=axis)
     return tf.cast(tf.equal(class_preds, target),
                    pred.dtype)
-
-"""
-RNNs:
-- want RNNs with precomputed input
-- grouping linear operations for LSTM
-
-- pros
-  - shape inference means less passing stuff around
-  - defaults make lots of common use cases easy
-- cons
-  - some things become harder
-    - eg. different init for different weights in LSTM
-"""
