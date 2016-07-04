@@ -53,7 +53,7 @@ with tf.variable_scope("mlp",
 
 y = tf.nn.softmax(l)
 
-cross_entropy = tf.reduce_mean(tfu.categorical_crossentropy(y, y_))
+cross_entropy = tf.reduce_mean(tfu.categorical_cross_entropy(y, y_))
 
 # train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 train_step = tf.train.AdamOptimizer().minimize(cross_entropy)

@@ -305,11 +305,11 @@ def lstm_step(tensors, state):
     return {"h": new_h, "c": new_c}
 
 
-def binary_crossentropy(pred, target):
+def binary_cross_entropy(pred, target):
     return -(target * tf.log(pred) + (1 - target) * tf.log(1 - pred))
 
 
-def categorical_crossentropy(pred, target, axis=1):
+def categorical_cross_entropy(pred, target, axis=1):
     if target.dtype == tf.int64:
         num_targets = get_shape_values(pred)[axis]
         target = tf.one_hot(indices=target,

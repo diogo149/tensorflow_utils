@@ -24,7 +24,7 @@ with tf.variable_scope("mlp",
 
 y = tf.nn.sigmoid(tf.squeeze(h, squeeze_dims=[1]))
 
-cross_entropy = tf.reduce_mean(tfu.binary_crossentropy(y, y_))
+cross_entropy = tf.reduce_mean(tfu.binary_cross_entropy(y, y_))
 accuracy = tf.reduce_mean(tfu.binary_accuracy(y, y_))
 
 train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
