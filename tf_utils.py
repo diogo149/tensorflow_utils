@@ -243,6 +243,27 @@ def max_pool(tensor,
                           name=name)
 
 
+def batch_normalization(name, tensor, epsilon=1e-4):
+    with tf.variable_scope(name):
+        num_units = get_shape_values(tensor)[1]
+        beta = tf.get_variable("beta",
+                               shape=[num_units],
+                               initializer=tf.constant_initializer(0.0))
+        gamma = tf.get_variable("gamma",
+                                shape=[num_units],
+                                initializer=tf.constant_initializer(1.0))
+        mean, variance = tf.nn.moments(x=tensor,
+                                       axes=[dim for dim in range(ndim(tensor))
+                                             if dim != 1],
+                                       keep_dims=True)
+        return tf.nn.batch_normalization(x=tensor,
+                                         mean=mean,
+                                         variance=variance,
+                                         offset=beta,
+                                         scale=gamma,
+                                         variance_epsilon=epsilon)
+
+
 def rnn_reduce(name,
                rnn_fn,
                tensors,
