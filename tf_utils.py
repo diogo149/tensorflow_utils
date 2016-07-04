@@ -320,6 +320,21 @@ def categorical_cross_entropy(pred, target, axis=1):
                           reduction_indices=[axis])
 
 
+def softmax_cross_entropy_with_logits(pred_logits, target, axis=1):
+    if ndim(pred_logits) == 2 and axis == 1:
+        if target.dtype in {tf.int32, tf.int64}:
+            return tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=pred_logits,
+                labels=target)
+        else:
+            return tf.nn.softmax_cross_entropy_with_logits(
+                logits=pred_logits,
+                labels=target)
+    else:
+        pred = tf.nn.softmax(pred_logits)
+        return categorical_cross_entropy(pred=pred, labels=target)
+
+
 def binary_accuracy(pred, target):
     return tf.cast(tf.equal(target,
                             tf.cast(pred > 0.5, pred.dtype)),
