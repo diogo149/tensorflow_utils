@@ -24,34 +24,34 @@ sess = tf.InteractiveSession()
 x = tf.placeholder(tf.float32, shape=init_shape)
 y_ = tf.placeholder(tf.int64, shape=[None])
 
-l = x
+h = x
 
 with tf.variable_scope("mlp",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
-    l = tfu.conv2d("conv1",
-                   l,
+    h = tfu.conv2d("conv1",
+                   h,
                    num_filters=16,
                    filter_size=(5, 5),
                    # strides=(2, 2),
                    data_format=DATA_FORMAT)
-    l = tf.nn.relu(l)
-    l = tfu.max_pool(l, (2, 2), data_format=DATA_FORMAT)
-    l = tfu.conv2d("conv2",
-                   l,
+    h = tf.nn.relu(h)
+    h = tfu.max_pool(h, (2, 2), data_format=DATA_FORMAT)
+    h = tfu.conv2d("conv2",
+                   h,
                    num_filters=32,
                    filter_size=(5, 5),
                    # strides=(2, 2),
                    data_format=DATA_FORMAT)
-    l = tf.nn.relu(l)
-    l = tfu.max_pool(l, (2, 2), data_format=DATA_FORMAT)
-    l = tfu.flatten(l, 2)
-    l = tfu.affine("fc1", l, 256)
-    l = tf.nn.relu(l)
-    l = tfu.affine("fc2", l, 256)
-    l = tf.nn.relu(l)
-    l = tfu.affine("logit", l, 10)
+    h = tf.nn.relu(h)
+    h = tfu.max_pool(h, (2, 2), data_format=DATA_FORMAT)
+    h = tfu.flatten(h, 2)
+    h = tfu.affine("fc1", h, 256)
+    h = tf.nn.relu(h)
+    h = tfu.affine("fc2", h, 256)
+    h = tf.nn.relu(h)
+    h = tfu.affine("logit", h, 10)
 
-cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(l, y_))
+cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(h, y_))
 
 # train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
@@ -69,7 +69,7 @@ def to_minibatches(dataset, batch_size):
         yield res
 
 
-accuracy = tf.reduce_mean(tfu.categorical_accuracy(l, y_))
+accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y_))
 
 sess.run(tf.initialize_all_variables())
 
