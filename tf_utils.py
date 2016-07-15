@@ -170,14 +170,22 @@ def flatten(tensor, outdim=1):
 def linear(name, tensor, num_units):
     with tf.variable_scope(name):
         num_inputs = get_shape_values(tensor)[-1]
-        W = tf.get_variable("W", (num_inputs, num_units))
+        W = tf.get_variable(name="W",
+                            shape=(num_inputs, num_units),
+                            dtype=tensor.dtype,
+                            collections=[tf.GraphKeys.VARIABLES,
+                                         tf.GraphKeys.WEIGHTS])
         return tf.matmul(tensor, W)
 
 
 def add_bias(name, tensor):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[-1]
-        b = tf.get_variable("b", (num_units,))
+        b = tf.get_variable(name="b",
+                            shape=(num_units,),
+                            dtype=tensor.dtype,
+                            collections=[tf.GraphKeys.VARIABLES,
+                                         tf.GraphKeys.BIASES])
         return tensor + b
 
 
@@ -200,18 +208,22 @@ def conv2d(name,
             strides = (1,) + strides + (1,)
             num_channels = get_shape_values(tensor)[3]
             filter_shape = filter_size + (num_channels, num_filters)
-            W = tf.get_variable("W",
-                                filter_shape,
-                                dtype=tensor.dtype)
+            W = tf.get_variable(name="W",
+                                shape=filter_shape,
+                                dtype=tensor.dtype,
+                                collections=[tf.GraphKeys.VARIABLES,
+                                             tf.GraphKeys.WEIGHTS])
         elif data_format == "NCHW":
             # TODO are these right?
             strides = (1, 1) + strides
             num_channels = get_shape_values(tensor)[1]
             filter_shape = filter_size + (num_channels, num_filters)
             # filter_shape = (num_channels,) + filter_size + (num_filters, )
-            W = tf.get_variable("W",
-                                filter_shape,
-                                dtype=tensor.dtype)
+            W = tf.get_variable(name="W",
+                                shape=filter_shape,
+                                dtype=tensor.dtype,
+                                collections=[tf.GraphKeys.VARIABLES,
+                                             tf.GraphKeys.WEIGHTS])
         else:
             raise ValueError
 
@@ -248,10 +260,17 @@ def batch_normalization(name, tensor, epsilon=1e-4):
         num_units = get_shape_values(tensor)[1]
         beta = tf.get_variable("beta",
                                shape=[num_units],
-                               initializer=tf.constant_initializer(0.0))
+                               dtype=tensor.dtype,
+                               initializer=tf.constant_initializer(0.0),
+                               collections=[tf.GraphKeys.VARIABLES,
+                                            tf.GraphKeys.BIASES,
+                                            "bn_beta"])
         gamma = tf.get_variable("gamma",
                                 shape=[num_units],
-                                initializer=tf.constant_initializer(1.0))
+                                dtype=tensor.dtype,
+                                initializer=tf.constant_initializer(1.0),
+                                collections=[tf.GraphKeys.VARIABLES,
+                                             "bn_gamma"])
         mean, variance = tf.nn.moments(x=tensor,
                                        axes=[dim for dim in range(ndim(tensor))
                                              if dim != 1],
@@ -285,47 +304,47 @@ def rnn_reduce(name,
 
 def simple_rnn_step(tensors, state):
     # TODO have different fn to also precompute input
-    x, = tensors
-    h = state
-    assert is_tensor(x)
-    assert is_tensor(h)
-    num_inputs = get_shape_values(x)[-1]
-    num_units = get_shape_values(h)[-1]
-    W = tf.get_variable("W", (num_inputs, num_units))
-    U = tf.get_variable("U", (num_units, num_units))
-    b = tf.get_variable("b", (num_units,))
-    return tf.tanh(tf.matmul(x, W) + tf.matmul(h, U) + b)
+    with tf.variable_scope("simple_rnn"):
+        x, = tensors
+        h = state
+        assert is_tensor(x)
+        assert is_tensor(h)
+        num_units = get_shape_values(h)[-1]
+        return tf.tanh(add_bias("bias",
+                                tf.linear("x_to_h", x, num_units) +
+                                tf.linear("h_to_h", h, num_units)))
 
 
 def lstm_step(tensors, state):
     # TODO group linear operations for more efficiency
-    x, = tensors
-    h = state["h"]
-    c = state["c"]
-    assert is_tensor(x)
-    assert is_tensor(h)
-    assert is_tensor(c)
-    num_units = get_shape_values(h)[-1]
-    assert get_shape_values(c)[-1] == num_units
-    forget_logit = add_bias("forget_bias",
-                            linear("forget_x", x, num_units) +
-                            linear("forget_h", h, num_units))
-    input_logit = add_bias("input_bias",
-                           linear("input_x", x, num_units) +
-                           linear("input_h", h, num_units))
-    output_logit = add_bias("output_bias",
-                            linear("output_x", x, num_units) +
-                            linear("output_h", h, num_units))
-    update_logit = add_bias("update_bias",
-                            linear("update_x", x, num_units) +
-                            linear("update_h", h, num_units))
-    f = tf.nn.sigmoid(forget_logit)
-    i = tf.nn.sigmoid(input_logit)
-    o = tf.nn.sigmoid(output_logit)
-    u = tf.tanh(update_logit)
-    new_c = f * c + i * u
-    new_h = tf.tanh(new_c) * o
-    return {"h": new_h, "c": new_c}
+    with tf.variable_scope("lstm"):
+        x, = tensors
+        h = state["h"]
+        c = state["c"]
+        assert is_tensor(x)
+        assert is_tensor(h)
+        assert is_tensor(c)
+        num_units = get_shape_values(h)[-1]
+        assert get_shape_values(c)[-1] == num_units
+        forget_logit = add_bias("forget_bias",
+                                linear("forget_x", x, num_units) +
+                                linear("forget_h", h, num_units))
+        input_logit = add_bias("input_bias",
+                               linear("input_x", x, num_units) +
+                               linear("input_h", h, num_units))
+        output_logit = add_bias("output_bias",
+                                linear("output_x", x, num_units) +
+                                linear("output_h", h, num_units))
+        update_logit = add_bias("update_bias",
+                                linear("update_x", x, num_units) +
+                                linear("update_h", h, num_units))
+        f = tf.nn.sigmoid(forget_logit)
+        i = tf.nn.sigmoid(input_logit)
+        o = tf.nn.sigmoid(output_logit)
+        u = tf.tanh(update_logit)
+        new_c = f * c + i * u
+        new_h = tf.tanh(new_c) * o
+        return {"h": new_h, "c": new_c}
 
 
 def binary_cross_entropy(pred, target):
